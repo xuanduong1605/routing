@@ -1,6 +1,7 @@
 ####################################################
 # DVrouter.py
 # Name:
+# HUID:
 #####################################################
 
 import sys
@@ -13,16 +14,35 @@ from json import dumps, loads
 class DVrouter(Router):
     """Distance vector routing protocol implementation."""
 
+    """
+    Class constructor. 
+    addr: the address of this router. 
+    heartbeatTime: routing information should be sent at least once 
+                   every heartbeatTime milliseconds.
+
+    Add your own class fields and initialization code 
+    (e.g. to create forwarding table data structures).
+    """
     def __init__(self, addr, heartbeatTime):
-        """TODO: add your own class fields and initialization code here"""
         Router.__init__(self, addr)  # initialize superclass - don't remove
         self.heartbeatTime = heartbeatTime
         self.last_time = 0
-        # Hints: initialize local state
+        # TODO: add your own class fields and initialization code here
         pass
 
+
+    """
+    Process incoming packet.
+    port: the port number on which the packet arrived.
+    packet: the received packet instance.
+
+    This method is called whenever a packet arrives on port number port. 
+    Check whether the packet is a traceroute packet or a routing packet
+      and handle it appropriately. 
+    Methods and fields of the packet class are defined in packet.py
+    """
     def handlePacket(self, port, packet):
-        """TODO: process incoming packet"""
+        # TODO: process incoming packet
         if packet.isTraceroute():
             # Hints: this is a normal data packet
             # if the forwarding table contains packet.dstAddr
@@ -38,30 +58,55 @@ class DVrouter(Router):
             pass
 
 
+    """
+    Handle new link.
+    port: the port number on which the link was added.
+    endpoint: the address of the other endpoint of the link.
+    cost: the link cost.
+
+    This method is called whenever a new link is added on port number port
+      connecting to a router or client with address endpoint and link cost cost. 
+    You should store the argument values in a data structure to use for routing. 
+    If you want to send packets along this link, call self.send(port, packet).
+    """
     def handleNewLink(self, port, endpoint, cost):
-        """TODO: handle new link"""
+        # TODO: handle new link
         # update the distance vector of this router
         # update the forwarding table
         # broadcast the distance vector of this router to neighbors
         pass
 
 
+    """
+    Handle removed link.
+    port: the port number on which the link was removed.
+    
+    This method is called when the existing link on port number port is disconnected. 
+    You should update data structures appropriately.
+    """
     def handleRemoveLink(self, port):
-        """TODO: handle removed link"""
+        # TODO: handle removed link
         # update the distance vector of this router
         # update the forwarding table
         # broadcast the distance vector of this router to neighbors
         pass
 
 
+    """
+    This method is called regularly for sending routing packets at regular intervals.
+    """
     def handleTime(self, timeMillisecs):
-        """TODO: handle current time"""
         if timeMillisecs - self.last_time >= self.heartbeatTime:
             self.last_time = timeMillisecs
-            # broadcast the distance vector of this router to neighbors
+            # TODO: broadcast the distance vector of this router to neighbors
             pass
 
 
+    """
+    This method is called by the network visualization to print current router details.
+    Return any string that will be helpful for debugging. 
+    This method is for your own use and will not be graded.
+    """
     def debugString(self):
-        """TODO: generate a string for debugging in network visualizer"""
+        # TODO: generate a string for debugging in network visualizer
         return ""

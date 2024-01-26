@@ -4,6 +4,15 @@
 
 * Implement distance-vector or link-state routing algorithms
 
+## Getting Started
+
+To start this project, you will first need to get the [infrastructure setup](https://github.com/minlanyu/cs145-site/blob/spring2024/infra.md) and clone this repository with submodules
+```
+git clone --recurse-submodules <your repository>
+```
+
+Run `./pull_update.sh` to pull project updates (if any). You might need to merge conflicts manually: most of the time, you just need to accept incoming changes; reach to TF if it is hard to merge. This step also applies to all subsequent projects. 
+
 ## Introduction
 
 The Internet is composed of many independent networks (called autonomous systems) that must cooperate in order for packets to reach their destinations.  This necessitates different protocols and algorithms for routing packet within autonomous systems, where all routers are operated by the same entity, and between autonomous systems, where business agreements and other policy considerations affect routing decisions.
@@ -19,7 +28,7 @@ Nearly all intra-domain routing algorithms used in real-world networks fall into
 
 ## Background
 
-At a high level, they work as follows. Your goal in this project is to turn this high-level description to actual working code.
+At a high level, they work as follows. Your goal in this project is to turn this high-level description to actual working code. You might find it helpful to review the details of the algorithms in textbooks (see course syllabus for textbook recommendations). 
 
 ### Distance-Vector Routing
 
@@ -42,7 +51,7 @@ distance vector and the forwarding table.
 
 The provided code implements a network simulator that abstracts away many details of a real network, allowing you to focus on intra-domain routing algorithms.  Each `.json` file in the `project2` directory is the specification for a different network simulation with different numbers of routers, links, and link costs. Some of these simulations also contain link additions and/or failures that will occur at pre-specified times.  
 
-The network simulator can be run with or without a graphical interface. For example, the command `python2 visualize_network.py 01_small_net.json` will run the simulator on a simple network with 2 routers and 3 clients. The default router implementation returns all traffic back out the link on which it arrives. This is obviously a terrible routing algorithm, which your implementations will fix.
+The network simulator can run with or without a graphical interface. For example, the command `python2 visualize_network.py 01_small_net.json` will run the simulator on a simple network with 2 routers and 3 clients. The default router implementation returns all traffic back out the link on which it arrives. This is obviously a terrible routing algorithm, which your implementations will fix.
 
 The network architecture is shown on the left side of the visualization. Routers are colored red, clients are colored blue. Each client periodically sends gray traceroute-like packets addressed to every other client in the network. These packets remember the sequence of routers they traverse, and the most recent route taken to each client is printed in the text box on the top right. This is an important debugging tool.
 
@@ -61,7 +70,7 @@ Your job is to complete the `DVrouter` and `LSrouter` classes in the `DVrouter.p
 The simulator will run independent instances of your completed `DVrouter` or `LSrouter` classes in separate threads, simulating independent routers in a network.
 
 You will notice that the `DVrouter` and `LSrouter` classes contain several unfinished methods marked with `TODO` (including `handlePacket`, `debugString`, etc.). These methods override those in the `Router` superclass (in `router.py`) and are called by the simulator when a corresponding event occurs (e.g. `handlePacket()` will be called when a router instance receives a packet).
-s
+
 The arguments to these methods contain all the information you need to implement the routing algorithms. Each of these methods is described in greater detail below.  
 
 In addition to completing each of these methods, you are free to add additional fields (instance variables) or helper methods to the `DVrouter` and `LSrouter` classes.
@@ -183,11 +192,16 @@ We will run the network simulation using the provided json files. Your grade wil
 
 The total grades is 100:
 
+- 30: correctness of code
+  - 10: doesn't modify files other than DVrouter.py and LSrouter.py
+  - 10: doesn't use restricted functions and variables in provided files (see [Restrictions](#Restrictions))
+  - 10: algorithmic correctness
 - 20: passing two small_net tests (10 for each)
-- 40: passing two pg244_net tests (20 for each)
-- 40: passing two pg242_net tests (20 for each)
+- 30: passing two pg244_net tests (15 for each)
+- 20: passing two pg242_net tests (10 for each)
 - 20: bonus points for implementing both (and passing all tests).
 - Deductions based on late policies
+- For this project, you are not required to modify the report (but please feel free to include citations and grading notes there).
 
 
 ## Acknowledgements
