@@ -35,7 +35,7 @@ class Packet:
 
 
     def isRouting(self):
-        """Returns Trur is the packet is a routing packet"""
+        """Returns True is the packet is a routing packet"""
         return self.kind == Packet.ROUTING
 
 
