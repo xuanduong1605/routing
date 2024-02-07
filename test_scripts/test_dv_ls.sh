@@ -64,7 +64,7 @@ function testAll {
   printf "$testMessage\n"
   printf "================================================================\n"
 
-  jsonFiles=$( find `pwd` -maxdepth 1 -name "*.json" )
+  jsonFiles=$( find $(pwd) -maxdepth 1 -name "*.json" )
   echo $jsonFiles
   numJsonFiles=$( echo $jsonFiles | wc -w )
   for jsonFile in $jsonFiles; do
