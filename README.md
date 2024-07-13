@@ -51,7 +51,7 @@ distance vector and the forwarding table.
 
 The provided code implements a network simulator that abstracts away many details of a real network, allowing you to focus on intra-domain routing algorithms.  Each `.json` file in the `project2` directory is the specification for a different network simulation with different numbers of routers, links, and link costs. Some of these simulations also contain link additions and/or failures that will occur at pre-specified times.  
 
-The network simulator can run with or without a graphical interface. For example, the command `python2 visualize_network.py 01_small_net.json` will run the simulator on a simple network with 2 routers and 3 clients. The default router implementation returns all traffic back out the link on which it arrives. This is obviously a terrible routing algorithm, which your implementations will fix.
+The network simulator can run with or without a graphical interface. For example, the command `python visualize_network.py 01_small_net.json` will run the simulator on a simple network with 2 routers and 3 clients. The default router implementation returns all traffic back out the link on which it arrives. This is obviously a terrible routing algorithm, which your implementations will fix.
 
 The network architecture is shown on the left side of the visualization. Routers are colored red, clients are colored blue. Each client periodically sends gray traceroute-like packets addressed to every other client in the network. These packets remember the sequence of routers they traverse, and the most recent route taken to each client is printed in the text box on the top right. This is an important debugging tool.
 
@@ -61,7 +61,7 @@ Clicking on a client hides all packets except those addressed to that client, so
 
 Clicking on a router causes a string about that router to print in the text box on the lower right. You will be able to set the contents of this string for debugging your router implementations.
 
-The same network simulation can be run without the graphical interface by the command `python2 network.py 01_small_net.json`. The simulation will run faster without having to go at visualizable speed. It will stop after a predetermined amount of time, print the final routes taken by the traceroute packets to and from all clients and whether these routes are correct given the known lowest-cost paths through the network.
+The same network simulation can be run without the graphical interface by the command `python network.py 01_small_net.json`. The simulation will run faster without having to go at visualizable speed. It will stop after a predetermined amount of time, print the final routes taken by the traceroute packets to and from all clients and whether these routes are correct given the known lowest-cost paths through the network.
 
 ## Implementation instructions
 
@@ -86,13 +86,7 @@ You will be graded on whether your solutions find lowest cost paths in the face 
 
 * Link-state routing involves reliably flooding link state updates.  You will need to use **sequence numbers** to distinguish new updates from old updates, but you will not need to check (via acknowledgements and retransmissions) that LSPs send successfully between adjacent routers. Assume that a lower-level protocol makes single-hop sends reliable.
 
-* Link-state routing involves computing shortest paths. You can choose to implement Dijkstra's algorithm, and the pseudo code is in the slides. Since this is a networking class instead of a data structures and algorithms class, you can also use a Python package like [NetworkX](https://networkx.org/). You should install NetworkX for Python 2:
-
-  ```
-  curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
-  sudo python2 get-pip.py
-  pip2 install networkx
-  ```
+* Link-state routing involves computing shortest paths. You can choose to implement Dijkstra's algorithm, and the pseudo code is in the slides. Since this is a networking class instead of a data structures and algorithms class, you can also use a Python package like [NetworkX](https://networkx.org/). 
 
 * Finally, LS and DV routing involve periodically sending routing information even if no detected change has occurred. This allows changes occurring far away in the network to propagate even if some routers do not change their routing tables in response to these changes (important for this project). It also allows detection of silent router failures (not tested in this project).  You implementations should send periodic routing packets every `heartbeatTime` milliseconds where `heartbeatTime` is an argument to the `DVrouter` or `LSrouter` constructor.  You will regularly get the current time in milliseconds as an argument to the `handleTime` method (see below).
 
@@ -160,13 +154,13 @@ You should test your `DVrouter` and `LSrouter` using the provided network simula
 
 Run the simulation with the graphical interface using the command
 
-`python2 visualize_network.py [networkSimulationFile.json] [DV|LS]`
+`python visualize_network.py [networkSimulationFile.json] [DV|LS]`
 
 The argument `DV` or `LS` indicates whether to run `DVrouter` or `LSrouter`, respectively.  
 
 Run the simulation without the graphical interface with the command
 
-`python2 network.py [networkSimulationFile.json] [DV|LS]`
+`python network.py [networkSimulationFile.json] [DV|LS]`
 
 The routes to and from each client at the end of the simulation will print, along with whether they match the reference lowest-cost routes. If the routes match, your implementation has passed for that simulation.  If they do not, continue debugging (using print statements and the `debugString()` method in your router classes).
 
