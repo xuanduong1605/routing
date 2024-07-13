@@ -1,6 +1,6 @@
 import time
 import sys
-import Queue
+import queue
 from packet import Packet
 
 
@@ -10,7 +10,7 @@ class Client:
 
 
     def __init__(self, addr, allClients, sendRate, updateFunction):
-        """Inititaliza parameters"""
+        """Inititalize parameters"""
         self.addr = addr
         self.allClients = allClients
         self.sendRate = sendRate
@@ -18,7 +18,7 @@ class Client:
         self.link = None
         self.updateFunction = updateFunction
         self.sending = True
-        self.linkChanges = Queue.Queue()
+        self.linkChanges = queue.Queue()
         self.keepRunning = True
 
 
@@ -61,7 +61,7 @@ class Client:
                 change = self.linkChanges.get_nowait()
                 if change[0] == "add":
                     self.link = change[1]
-            except Queue.Empty:
+            except queue.Empty:
                 pass
             if self.link:
                 packet = self.link.recv(self.addr)

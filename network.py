@@ -5,7 +5,7 @@ import pickle
 import signal
 import time
 import os.path
-import Queue
+import queue
 from collections import defaultdict
 from client import Client
 from link import Link
@@ -22,7 +22,7 @@ def json_load_byteified(file_handle):
 
 def _byteify(data, ignore_dicts = False):
     # if this is a unicode string, return its string representation
-    if isinstance(data, unicode):
+    if isinstance(data, str):
         return data.encode('utf-8')
     # if this is a list of values, return list of byteified values
     if isinstance(data, list):
@@ -32,7 +32,7 @@ def _byteify(data, ignore_dicts = False):
     if isinstance(data, dict) and not ignore_dicts:
         return {
             _byteify(key, ignore_dicts=True): _byteify(value, ignore_dicts=True)
-            for key, value in data.iteritems()
+            for key, value in data.items()
         }
     # if it's anything else, return it in its original form
     return data
@@ -46,8 +46,10 @@ class Network:
            LSrouter, or the default Router"""
 
         # parse configuration details
-        netJsonFile = open(netJsonFilepath, 'r')
-        netJson = json_load_byteified(netJsonFile)
+        # netJsonFile = open(netJsonFilepath, 'r')
+        # netJson = json_load_byteified(netJsonFile)
+        with open(netJsonFilepath, 'r') as f:
+            netJson = json.load(f)
         self.latencyMultiplier = 100
         self.endTime = netJson["endTime"] * self.latencyMultiplier
         self.visualize = visualize
@@ -72,7 +74,7 @@ class Network:
         self.routes = {}
         #self.routesLock = thread.allocate_lock()
         self.routesLock = threading.Lock()
-        netJsonFile.close()
+        # netJsonFile.close()
 
 
     def parseRouters(self, routerParams, routerClass):
@@ -106,7 +108,7 @@ class Network:
 
     def parseChanges(self, changesParams):
         """Parse link changes from changesParams dict"""
-        changes = Queue.PriorityQueue()
+        changes = queue.PriorityQueue()
         for change in changesParams:
             #print change
             changes.put(change)
@@ -258,7 +260,7 @@ class Network:
 
     def handleInterrupt(self, signum, _):
         self.joinAll()
-        print ''
+        print('')
         quit()
 
 
@@ -266,7 +268,7 @@ class Network:
 def main():
     """Main function parses command line arguments and runs network"""
     if len(sys.argv) < 2:
-        print "Usage: python network.py [networkSimulationFile.json] [DV|LS (router class, optional)]"
+        print("Usage: python network.py [networkSimulationFile.json] [DV|LS (router class, optional)]")
         return
     netCfgFilepath = sys.argv[1]
     routerClass = Router

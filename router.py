@@ -1,7 +1,6 @@
 import time
 import sys
-import thread
-import Queue
+import queue
 
 
 class Router:
@@ -15,7 +14,7 @@ class Router:
         """Initialize Router address and threadsafe queue for link changes"""
         self.addr = addr       # address of router
         self.links = {}        # links indexed by port
-        self.linkChanges = Queue.Queue()
+        self.linkChanges = queue.Queue()
         self.keepRunning = True
 
 
@@ -36,7 +35,7 @@ class Router:
 
     def removeLink(self, port):
         """Remove link from router"""
-        self.links = {p:link for p,link in self.links.iteritems() if p != port}
+        self.links = {p:link for p,link in self.links.items() if p != port}
         self.handleRemoveLink(port)
 
 
@@ -51,7 +50,7 @@ class Router:
                     self.addLink(*change[1:])
                 elif change[0] == "remove":
                     self.removeLink(*change[1:])
-            except Queue.Empty:
+            except queue.Empty:
                 pass
             for port in self.links.keys():
                 packet = self.links[port].recv(self.addr)

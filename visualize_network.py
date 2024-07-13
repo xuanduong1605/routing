@@ -1,8 +1,8 @@
 import sys
-from Tkinter import *
-import tkFont
+from tkinter import *
+import tkinter.font
 import json
-import thread
+import _thread
 import time
 from router import Router
 from network import Network
@@ -58,9 +58,9 @@ class App:
         self.rects = self.drawRectangles()
 
         #self.drawNetwork()
-        thread.start_new_thread(self.network.run, ())
-        thread.start_new_thread(self.displayCurrentRoutes, ())
-        thread.start_new_thread(self.displayCurrentDebug, ())
+        _thread.start_new_thread(self.network.run, ())
+        _thread.start_new_thread(self.displayCurrentRoutes, ())
+        _thread.start_new_thread(self.displayCurrentDebug, ())
 
     def calcRectCenters(self):
         """Compute the centers of the rectangles representing clients/routers"""
@@ -95,7 +95,7 @@ class App:
         tx, ty = (center1[0] + center2[0])/2, (center1[1] + center2[1])/2
         t = str(c12) if c12 == c21 else "{}->{}:{}, {}->{}:{}".format(addr1, addr2, c12, addr2, addr1, c21)
         label = self.canvas.create_text(tx, ty, text=t,
-                                       state=NORMAL, font=tkFont.Font(size=self.networkParams["visualize"]["lineFontSize"]))
+                                       state=NORMAL, font=tkinter.font.Font(size=self.networkParams["visualize"]["lineFontSize"]))
         return line, label
 
 
@@ -112,7 +112,7 @@ class App:
                     c[0]+self.boxWidth/6, c[1]+self.boxHeight/6, fill=fill, activeoutline="green", activewidth=5)
             self.canvas.tag_bind(rect, '<1>', lambda event, label=label: self.inspectClientOrRouter(label))
             rects[label] = rect
-            rectText = self.canvas.create_text(c[0], c[1], text=label, font=tkFont.Font(size=18, weight='bold'))
+            rectText = self.canvas.create_text(c[0], c[1], text=label, font=tkinter.font.Font(size=18, weight='bold'))
         return rects
 
 
@@ -153,7 +153,7 @@ class App:
         distx, disty = dx-cx, dy-cy
         velocityx, velocityy = (distx*self.animateRate)/float(latency), (disty*self.animateRate/float(latency))
         numSteps, stepTime = latency / self.animateRate, self.animateRate/float(1000)
-        thread.start_new_thread(self.movePacket, (packetRect, velocityx, velocityy, numSteps, stepTime))
+        _thread.start_new_thread(self.movePacket, (packetRect, velocityx, velocityy, numSteps, stepTime))
 
 
     def movePacket(self, packetRect, vx, vy, numSteps, stepTime):
@@ -207,7 +207,7 @@ def main():
     """Main function parses command line arguments and
        runs the network visualizer"""
     if len(sys.argv) < 2:
-        print "Usage: python network.py [networkSimulationFile.json] [DV|LS (router class, optional)]"
+        print("Usage: python network.py [networkSimulationFile.json] [DV|LS (router class, optional)]")
         return
     netCfgFilepath = sys.argv[1]
     visualizeParams = json.load(open(netCfgFilepath))

@@ -1,9 +1,7 @@
-import thread
+import _thread
 import sys
-import Queue
+import queue
 import time
-import threading
-from types import StringType
 
 
 class Link:
@@ -15,8 +13,8 @@ class Link:
         """Create queues. e1 & e2 are addresses of the 2 endpoints of
            the link. l12 and l21 are the latencies (in ms) in the
            e1->e2 and e2->e1 directions, respectively"""
-        self.q12 = Queue.Queue()
-        self.q21 = Queue.Queue()
+        self.q12 = queue.Queue()
+        self.q21 = queue.Queue()
         self.l12 = l12*latency
         self.l21 = l21*latency
         self.latencyMultiplier = latency
@@ -45,9 +43,9 @@ class Link:
            a string and starts a new thread to send it.
            (src must be equal to self.e1 or self.e2)"""
         if packet.content:
-            assert type(packet.content) is StringType, "Packet content must be a string"
+            assert isinstance(packet.content, str), "Packet content must be a string"
         p = packet.copy()
-        thread.start_new_thread(self.send_helper, (p, src))
+        _thread.start_new_thread(self.send_helper, (p, src))
 
 
     def recv(self, dst, timeout=None):
@@ -58,13 +56,13 @@ class Link:
             try:
                 packet = self.q21.get_nowait()
                 return packet
-            except Queue.Empty:
+            except queue.Empty:
                 return None
         elif dst == self.e2:
             try:
                 packet = self.q12.get_nowait()
                 return packet
-            except Queue.Empty:
+            except queue.Empty:
                 return None
 
 

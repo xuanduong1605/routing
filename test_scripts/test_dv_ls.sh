@@ -33,7 +33,7 @@ function test {
   timeOut=0
   printf "\n$testNum. Testing $2 with $1router\n"
   ((testNum++))
-  timeout $TIMEOUT_PER_TEST python2 network.py $2 $1 | tee $RESULT_FILE
+  timeout $TIMEOUT_PER_TEST python network.py $2 $1 | tee $RESULT_FILE
   if [ ${PIPESTATUS[0]} -eq 124 ]; then
     timeOut=1
     printf "TIMED OUT\n"
