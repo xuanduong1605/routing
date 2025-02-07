@@ -209,4 +209,4 @@ The total grades is 100:
 This programming project is based on Princeton University's Project 2 from COS 461: Computer Networks, and Johns Hopkins University's Assignment 3 from EN.601.414/614: Computer Networks.
 
 ## Survey
-Please fill out the Canvas survey after completing this project. 2 extra points will be given once you have finished it. 
+Please fill up the survey when you finish your project: [Survey link](https://forms.gle/jfeQDjfNHbMTqPfT7).
