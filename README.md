@@ -67,13 +67,21 @@ The same network simulation can be run without the graphical interface by the co
 
 ## Implementation instructions
 
-Your job is to complete the `DVrouter` and `LSrouter` classes in the `DVrouter.py` and `LSrouter.py` files so they implement distance-vector or link-state routing algorithms, respectively.
+Your job is to complete the `DVrouter` and `LSrouter` classes in the `DVrouter.py` and `LSrouter.py` files so they implement distance-vector or link-state routing algorithms, respectively. The simulator will run independent instances of your completed `DVrouter` or `LSrouter` classes in separate threads, simulating independent routers in a network.
 
-The simulator will run independent instances of your completed `DVrouter` or `LSrouter` classes in separate threads, simulating independent routers in a network.
+You will notice that the `DVrouter` and `LSrouter` classes contain several unfinished methods marked with `TODO`. They are:
 
-You will notice that the `DVrouter` and `LSrouter` classes contain several unfinished methods marked with `TODO` (including `handlePacket`, `debugString`, etc.). These methods override those in the `Router` superclass (in `router.py`) and are called by the simulator when a corresponding event occurs (e.g. `handlePacket()` will be called when a router instance receives a packet).
+- `__init__`
+- `handlePacket`
+- `handleNewLink`
+- `handleRemoveLink`
+- `handleTime`
+- `debugString` (optional)
 
-The arguments to these methods contain all the information you need to implement the routing algorithms. Each of these methods is described in greater detail below.
+These methods override those in the `Router` base class (in `router.py`) and are called by the simulator when a corresponding event occurs (e.g. `handlePacket()` will be called when a router instance receives a packet).
+
+> [!NOTE]
+> Check the docstrings of corresponding methods in the `Router` base class for detailed descriptions.
 
 In addition to completing each of these methods, you are free to add additional fields (instance variables) or helper methods to the `DVrouter` and `LSrouter` classes.
 
@@ -94,31 +102,9 @@ There are limitations on what information your `DVrouter` and `LSrouter` classes
 * Your solution must not require modification to any files other than `DVrouter.py` and `LSrouter.py`. The grading tests will be performed with unchanged versions of the other files.
 
 * Your code may not call any functions or methods, instantiate any classes, or access any variables defined in any of the other provided python files, with the following exceptions:
-  * `LSrouter` and `DVrouter` can call the inherited `send` function of the `Router` superclass (e.g. `self.send(port, packet)`).
-  * `LSrouter` and `DVrouter` can access the `addr` field of the `Router` superclass (e.g. `self.addr`) to get their own address.
+  * `LSrouter` and `DVrouter` can call the inherited `send` function of the `Router` base class (e.g. `self.send(port, packet)`).
+  * `LSrouter` and `DVrouter` can access the `addr` field of the `Router` base class (e.g. `self.addr`) to get their own address.
   * `LSrouter` and `DVrouter` can create new `Packet` objects and call any of the methods defined in `packet.py` *EXCEPT* for `getRoute()`, `addToRoute()`, and `animateSend()`. You can access and change any of the fields of a `Packet` object EXCEPT for `route`.
-
-### Method descriptions
-
-These are the methods you need to complete in `DVrouter` and `LSrouter`:
-
-* `__init__(self, addr, heartbeatTime)`
-  * Class constructor. `addr` is the address of this router. Add your own class fields and initialization code (e.g. to create forwarding table data structures). Routing information should be sent by this router at least once every `heartbeatTime` milliseconds.
-
-* `handlePacket(self, port, packet)`
-  * Process incoming packet: This method is called whenever a packet arrives at the router on port number `port`. You should check whether the packet is a traceroute packet or a routing packet and handle it appropriately. Methods and fields of the packet class are defined in `packet.py`.
-
-* `handleNewLink(self, port, endpoint, cost)`
-  * This method is called whenever a new link is added to the router on port number `port` connecting to a router or client with address `endpoint` and link cost `cost`. You should store the argument values in a data structure to use for routing. If you want to send packets along this link, call `self.send(port, packet)`.
-
-* `handleRemoveLink(self, port)`
-  * This method is called when the existing link on port number `port` is disconnected. You should update data structures appropriately.
-
-* `handleTime(self, timeMillisecs)`
-  * This method is called regularly and provides you with the current time in millisecs for sending routing packets at regular intervals.
-
-* `debugString(self)`
-  * This method is called by the network visualization to print current details about the router. It should return any string that will be helpful for debugging. This method is for your own use and will not be graded.
 
 ### Creating and sending packets
 
