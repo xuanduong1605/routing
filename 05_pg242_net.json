@@ -1,8 +1,8 @@
 {
   "routers": ["A", "B", "C", "D", "E", "F"],
   "clients": ["a", "b", "c", "d", "e", "f"],
-  "clientSendRate": 10,
-  "endTime": 200,
+  "client_send_rate": 10,
+  "end_time": 200,
 
   "links": [
     ["A", "B", 1, 1, 3, 3],
@@ -24,7 +24,7 @@
 
   "changes": [],
 
-  "correctRoutes": [
+  "correct_routes": [
     ["a", "A", "a"],
     ["a", "A", "E", "B", "b"],
     ["a", "A", "E", "B", "C", "c"],
@@ -69,7 +69,7 @@
   ],
 
   "visualize": {
-    "gridSize": 4,
+    "grid_size": 4,
     "locations": {
       "A": [1,0],
       "B": [1,1],
@@ -84,16 +84,16 @@
       "e": [3,1],
       "f": [3,0]
     },
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "timeMultiplier": 20,
-    "latencyCorrection": 1.5,
-    "animateRate": 40,
-    "routerColor": "red",
-    "clientColor": "DodgerBlue2",
-    "lineColor": "orange",
+    "canvas_width": 800,
+    "canvas_height": 800,
+    "time_multiplier": 20,
+    "latency_correction": 1.5,
+    "animate_rate": 40,
+    "router_color": "red",
+    "client_color": "DodgerBlue2",
+    "line_color": "orange",
     "inactiveColor": "gray",
-    "lineWidth": 6,
-    "lineFontSize": 16
+    "line_width": 6,
+    "line_font_size": 16
   }
 }

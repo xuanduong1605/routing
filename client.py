@@ -9,54 +9,54 @@ class Client:
     these packets take back to the network object.
     """
 
-    def __init__(self, addr, allClients, sendRate, updateFunction):
+    def __init__(self, addr, all_clients, send_rate, update_fn):
         self.addr = addr
-        self.allClients = allClients
-        self.sendRate = sendRate
-        self.lastTime = 0
+        self.all_clients = all_clients
+        self.send_rate = send_rate
+        self.last_time = 0
         self.link = None
-        self.updateFunction = updateFunction
+        self.update_fn = update_fn
         self.sending = True
-        self.linkChanges = queue.Queue()
-        self.keepRunning = True
+        self.link_changes = queue.Queue()
+        self.keep_running = True
 
-    def changeLink(self, change):
+    def change_link(self, change):
         """Add a link to the client.
 
         The change argument should be a tuple ('add', link).
         """
-        self.linkChanges.put(change)
+        self.link_changes.put(change)
 
-    def handlePacket(self, packet):
+    def handle_packet(self, packet):
         """Handle receiving a packet.
 
         If it is a routing packet, ignore. If it is a "traceroute" packet, update the
         network object with its route.
         """
         if packet.kind == Packet.TRACEROUTE:
-            self.updateFunction(packet.srcAddr, packet.dstAddr, packet.route)
+            self.update_fn(packet.src_addr, packet.dst_addr, packet.route)
 
-    def sendTraceroutes(self):
+    def send_traceroutes(self):
         """Send "traceroute" packets to every other client in the network."""
-        for dstClient in self.allClients:
-            packet = Packet(Packet.TRACEROUTE, self.addr, dstClient)
+        for dst_client in self.all_clients:
+            packet = Packet(Packet.TRACEROUTE, self.addr, dst_client)
             if self.link:
                 self.link.send(packet, self.addr)
-            self.updateFunction(packet.srcAddr, packet.dstAddr, [])
+            self.update_fn(packet.src_addr, packet.dst_addr, [])
 
-    def handleTime(self, timeMillisecs):
+    def handle_time(self, time_ms):
         """Send traceroute packets regularly."""
-        if self.sending and (timeMillisecs - self.lastTime > self.sendRate):
-            self.sendTraceroutes()
-            self.lastTime = timeMillisecs
+        if self.sending and (time_ms - self.last_time > self.send_rate):
+            self.send_traceroutes()
+            self.last_time = time_ms
 
-    def runClient(self):
+    def run(self):
         """Main loop of client."""
-        while self.keepRunning:
+        while self.keep_running:
             time.sleep(0.1)
-            timeMillisecs = int(round(time.time() * 1000))
+            time_ms = int(round(time.time() * 1000))
             try:
-                change = self.linkChanges.get_nowait()
+                change = self.link_changes.get_nowait()
                 if change[0] == "add":
                     self.link = change[1]
             except queue.Empty:
@@ -64,10 +64,10 @@ class Client:
             if self.link:
                 packet = self.link.recv(self.addr)
                 if packet:
-                    self.handlePacket(packet)
-            self.handleTime(timeMillisecs)
+                    self.handle_packet(packet)
+            self.handle_time(time_ms)
 
-    def lastSend(self):
+    def last_send(self):
         """Send one final batch of "traceroute" packets."""
         self.sending = False
-        self.sendTraceroutes()
+        self.send_traceroutes()

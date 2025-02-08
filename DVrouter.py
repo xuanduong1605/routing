@@ -15,20 +15,20 @@ class DVrouter(Router):
     override.
     """
 
-    def __init__(self, addr, heartbeatTime):
+    def __init__(self, addr, heartbeat_time):
         Router.__init__(self, addr)  # Initialize base class - DO NOT REMOVE
-        self.heartbeatTime = heartbeatTime
+        self.heartbeat_time = heartbeat_time
         self.last_time = 0
         # TODO
         #   add your own class fields and initialization code here
         pass
 
-    def handlePacket(self, port, packet):
+    def handle_packet(self, port, packet):
         """Process incoming packet."""
         # TODO
-        if packet.isTraceroute():
+        if packet.is_traceroute:
             # Hint: this is a normal data packet
-            # If the forwarding table contains packet.dstAddr
+            # If the forwarding table contains packet.dst_addr
             #   send packet based on forwarding table, e.g., self.send(port, packet)
             pass
         else:
@@ -40,7 +40,7 @@ class DVrouter(Router):
             #   broadcast the distance vector of this router to neighbors
             pass
 
-    def handleNewLink(self, port, endpoint, cost):
+    def handle_new_link(self, port, endpoint, cost):
         """Handle new link."""
         # TODO
         #   update the distance vector of this router
@@ -48,7 +48,7 @@ class DVrouter(Router):
         #   broadcast the distance vector of this router to neighbors
         pass
 
-    def handleRemoveLink(self, port):
+    def handle_remove_link(self, port):
         """Handle removed link."""
         # TODO
         #   update the distance vector of this router
@@ -56,16 +56,16 @@ class DVrouter(Router):
         #   broadcast the distance vector of this router to neighbors
         pass
 
-    def handleTime(self, timeMillisecs):
+    def handle_time(self, time_ms):
         """Handle current time."""
-        if timeMillisecs - self.last_time >= self.heartbeatTime:
-            self.last_time = timeMillisecs
+        if time_ms - self.last_time >= self.heartbeat_time:
+            self.last_time = time_ms
             # TODO
             #   broadcast the distance vector of this router to neighbors
             pass
 
-    def debugString(self):
-        """Generate a string for debugging in network visualizer."""
+    def __repr__(self):
+        """Representation for debugging in the network visualizer."""
         # TODO
         #   NOTE This method is for your own convenience and will not be graded
-        return ""
+        return f"DVrouter(addr={self.addr})"

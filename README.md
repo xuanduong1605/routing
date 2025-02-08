@@ -51,9 +51,15 @@ At a high level, they work as follows. Your goal in this project is to turn this
 
 ### Familiarize yourself with the network simulator
 
-The provided code implements a network simulator that abstracts away many details of a real network, allowing you to focus on intra-domain routing algorithms. Each `.json` file in the `project2` directory is the specification for a different network simulation with different numbers of routers, links, and link costs. Some of these simulations also contain link additions and/or failures that will occur at pre-specified times.
+The provided code implements a network simulator that abstracts away many details of a real network, allowing you to focus on intra-domain routing algorithms. Each `.json` file in this directory is the specification for a different network simulation with different numbers of routers, links, and link costs. Some of these simulations also contain link additions and/or failures that will occur at pre-specified times.
 
-The network simulator can run with or without a graphical interface. For example, the command `python visualize_network.py 01_small_net.json` will run the simulator on a simple network with 2 routers and 3 clients. The default router implementation returns all traffic back out the link on which it arrives. This is obviously a terrible routing algorithm, which your implementations will fix.
+The network simulator can run with or without a graphical interface. For example, the command
+
+```bash
+python visualize_network.py 01_small_net.json
+```
+
+will run the simulator on a simple network with 2 routers and 3 clients. The default router implementation returns all traffic back out the link on which it arrives. This is obviously a terrible routing algorithm, which your implementations will fix.
 
 The network architecture is shown on the left side of the visualization. Routers are colored red, clients are colored blue. Each client periodically sends gray traceroute-like packets addressed to every other client in the network. These packets remember the sequence of routers they traverse, and the most recent route taken to each client is printed in the text box on the top right. This is an important debugging tool.
 
@@ -63,25 +69,31 @@ Clicking on a client hides all packets except those addressed to that client, so
 
 Clicking on a router causes a string about that router to print in the text box on the lower right. You will be able to set the contents of this string for debugging your router implementations.
 
-The same network simulation can be run without the graphical interface by the command `python network.py 01_small_net.json`. The simulation will run faster without having to go at visualizable speed. It will stop after a predetermined amount of time, print the final routes taken by the traceroute packets to and from all clients and whether these routes are correct given the known lowest-cost paths through the network.
+The same network simulation can be run without the graphical interface by the command following command:
 
-## Implementation instructions
+```bash
+python network.py 01_small_net.json
+```
+
+The simulation will run faster without having to go at visualizable speed. It will stop after a predetermined amount of time, print the final routes taken by the traceroute packets to and from all clients and whether these routes are correct given the known lowest-cost paths through the network.
+
+## Implementation Instructions
 
 Your job is to complete the `DVrouter` and `LSrouter` classes in the `DVrouter.py` and `LSrouter.py` files so they implement distance-vector or link-state routing algorithms, respectively. The simulator will run independent instances of your completed `DVrouter` or `LSrouter` classes in separate threads, simulating independent routers in a network.
 
 You will notice that the `DVrouter` and `LSrouter` classes contain several unfinished methods marked with `TODO`. They are:
 
 - `__init__`
-- `handlePacket`
-- `handleNewLink`
-- `handleRemoveLink`
-- `handleTime`
-- `debugString` (optional)
+- `handle_packet`
+- `handle_new_link`
+- `handle_remove_link`
+- `handle_time`
+- `__repr__` (optional, for your own debugging)
 
-These methods override those in the `Router` base class (in `router.py`) and are called by the simulator when a corresponding event occurs (e.g. `handlePacket()` will be called when a router instance receives a packet).
+These methods override those in the `Router` base class (in `router.py`) and are called by the simulator when a corresponding event occurs (e.g. `handle_packet` will be called when a router instance receives a packet).
 
 > [!NOTE]
-> Check the docstrings of corresponding methods in the `Router` base class for detailed descriptions.
+> Check the docstrings of corresponding methods in the `Router` base class in `router.py` for detailed descriptions.
 
 In addition to completing each of these methods, you are free to add additional fields (instance variables) or helper methods to the `DVrouter` and `LSrouter` classes.
 
@@ -93,7 +105,7 @@ You will be graded on whether your solutions find lowest cost paths in the face 
 * The slides discuss the "count-to-infinity" problem for distance-vector routing. You will need to handle this problem. You can use the heuristic discussed in the slides. Setting infinity = 16 is fine for the networks in this project.
 * Link-state routing involves reliably flooding link state updates. You will need to use **sequence numbers** to distinguish new updates from old updates, but you will not need to check (via acknowledgements and retransmissions) that LSPs send successfully between adjacent routers. Assume that a lower-level protocol makes single-hop sends reliable.
 * Link-state routing involves computing shortest paths. You can choose to implement Dijkstra's algorithm, and the pseudo code is in the slides. Since this is a networking class instead of a data structures and algorithms class, you can also use a Python package like [NetworkX](https://networkx.org/).
-* Finally, LS and DV routing involve periodically sending routing information even if no detected change has occurred. This allows changes occurring far away in the network to propagate even if some routers do not change their routing tables in response to these changes (important for this project). It also allows detection of silent router failures (not tested in this project). You implementations should send periodic routing packets every `heartbeatTime` milliseconds where `heartbeatTime` is an argument to the `DVrouter` or `LSrouter` constructor. You will regularly get the current time in milliseconds as an argument to the `handleTime` method (see below).
+* Finally, LS and DV routing involve periodically sending routing information even if no detected change has occurred. This allows changes occurring far away in the network to propagate even if some routers do not change their routing tables in response to these changes (important for this project). It also allows detection of silent router failures (not tested in this project). You implementations should send periodic routing packets every `heartbeat_time` milliseconds where `heartbeat_time` is an argument to the `DVrouter` or `LSrouter` constructor. You will regularly get the current time in milliseconds as an argument to the `handle_time` method (see below).
 
 ### Restrictions
 
@@ -101,20 +113,20 @@ There are limitations on what information your `DVrouter` and `LSrouter` classes
 
 * Your solution must not require modification to any files other than `DVrouter.py` and `LSrouter.py`. The grading tests will be performed with unchanged versions of the other files.
 
-* Your code may not call any functions or methods, instantiate any classes, or access any variables defined in any of the other provided python files, with the following exceptions:
+* Your code may not call any functions or methods, instantiate any classes, or access any variables defined in any of the other provided Python files, with the following exceptions:
   * `LSrouter` and `DVrouter` can call the inherited `send` function of the `Router` base class (e.g. `self.send(port, packet)`).
   * `LSrouter` and `DVrouter` can access the `addr` field of the `Router` base class (e.g. `self.addr`) to get their own address.
-  * `LSrouter` and `DVrouter` can create new `Packet` objects and call any of the methods defined in `packet.py` *EXCEPT* for `getRoute()`, `addToRoute()`, and `animateSend()`. You can access and change any of the fields of a `Packet` object EXCEPT for `route`.
+  * `LSrouter` and `DVrouter` can create new `Packet` objects and call any of the methods defined in `packet.py` **EXCEPT FOR** `add_to_route` and `animate_send`. You can access and change any of the fields of a `Packet` object **EXCEPT FOR** `route`.
 
 ### Creating and sending packets
 
-You will need to create packets to send information between routers using the `Packet` class defined in `packet.py`. Any packet `p` you create to send routing information should have `p.kind == ROUTING`.
+You will need to create packets to send information between routers using the `Packet` class defined in `packet.py`. Any packet `p` you create to send routing information should have `p.kind == Packet.ROUTING`.
 
 You will have to decide what to include in the `content` field of these packets. The content should be reasonable for the algorithm you are implementing (e.g. don't send an entire routing table for link-state routing).
 
-Packet content must be a string. This is checked by an assert statement when the packet is sent. `DVrouter` and `LSrouter` import the `dumps()` and `loads()` functions which return a string (in json format) when given a python object. Using these functions is an easy way to stringify and de-stringify.
+Packet content must be a string. This is checked by an assert statement when the packet is sent. `DVrouter` and `LSrouter` uses the `dumps` and `loads` functions from the built-in library `json` which provide an easy way to stringify and de-stringify Python objects.
 
-You can access and set/modify any of the fields of a packet object (including `content`, `srcAddr`, `dstAdddr` and `kind`) except for `route` (see "Restrictions" above).
+You can access and set/modify any of the fields of a packet object (including `content`, `src_addr`, `dst_addr`, and `kind`) except for `route` (see [Restrictions](#restrictions) above).
 
 ### Link reliability
 
@@ -128,25 +140,43 @@ The simulated network in this project abstracts away many details you would need
 
 ## Running and Testing
 
-You should test your `DVrouter` and `LSrouter` using the provided network simulator. There are multiple json files defining different network architectures and link failures and additions. The json files without "events" in their file name do not have link failures or additions and are good for initial testing.
+You should test your `DVrouter` and `LSrouter` using the provided network simulator. There are multiple JSON files defining different network architectures and link failures and additions. The JSON files without `_events` in their file name do not have link failures or additions and are good for initial testing.
 
-Run the simulation with the graphical interface using the command
-
-```
-python visualize_network.py [networkSimulationFile.json] [DV|LS]
-```
-
-The argument `DV` or `LS` indicates whether to run `DVrouter` or `LSrouter`, respectively.
-
-Run the simulation without the graphical interface with the command
+To run the simulation with a graphical interface:
 
 ```
-python network.py [networkSimulationFile.json] [DV|LS]
+usage: visualize_network.py [-h] net_json_path [{DV,LS}]
+
+Visualize a network simulation.
+
+positional arguments:
+  net_json_path  Path to the network simulation configuration file (JSON).
+  {DV,LS}        DV for DVrouter and LS for LSrouter. If not provided, Router is used.
+
+options:
+  -h, --help     show this help message and exit
 ```
 
-The routes to and from each client at the end of the simulation will print, along with whether they match the reference lowest-cost routes. If the routes match, your implementation has passed for that simulation. If they do not, continue debugging (using print statements and the `debugString()` method in your router classes).
+The second argument can be `DV` or `LS` which indicates whether to run `DVrouter` or `LSrouter`, respectively.
 
-The bash script `test_dv_ls.sh` will run all the supplied networks with your router implementations. You can also pass "LS" or "DV" as an argument to `test_dv_ls.sh` (e.g. `test_dv_ls.sh DV`) to test only one implementation.
+To run the simulation without the graphical interface:
+
+```
+usage: network.py [-h] net_json_path [{DV,LS}]
+
+Run a network simulation.
+
+positional arguments:
+  net_json_path  Path to the network simulation configuration file (JSON).
+  {DV,LS}        DV for DVrouter and LS for LSrouter. If not provided, Router is used.
+
+options:
+  -h, --help     show this help message and exit
+```
+
+The routes to and from each client at the end of the simulation will print, along with whether they match the reference lowest-cost routes. If the routes match, your implementation has passed for that simulation. If they do not, continue debugging (using print statements and the `__repr__` method in your router classes).
+
+The bash script `test_scripts/test_dv_ls.sh` will run all the supplied networks with your router implementations. You can also pass `LS` or `DV` as an argument to `test_scripts/test_dv_ls.sh` (e.g. `./test_scripts/test_dv_ls.sh DV`) to test only one of the two implementations.
 
 Don't worry if you get the following error. It sometimes occurs when the threads are stopped at the end of the simulation without warning:
 
@@ -168,22 +198,20 @@ You are expected to submit the following documents:
 1. The source code for `DVrouter.py` or `LSrouter.py`.
 2. Bonus: If you submit both `DVrouter.py` and `LSrouter.py` and they pass all the tests, you can get a bonus of 20 points.
 
-Please make sure all files are in the `project2/` folder of your master branch.
-
-We will run the network simulation using the provided json files. Your grade will be based on whether your algorithm finds the lowest cost paths and whether you have violated any of the restrictions listed above. We will also check that `DVrouter` actually runs a distance-vector algorithm and that `LSrouter` actually runs a link-state algorithm.
+We will run the network simulation using the provided JSON files. Your grade will be based on whether your algorithm finds the lowest cost paths and whether you have violated any of the restrictions listed above. We will also check that `DVrouter` actually runs a distance-vector algorithm and that `LSrouter` actually runs a link-state algorithm.
 
 ### Grading
 
 The total grades is 100:
 
 - 30: correctness of code
-  - 10: doesn't modify files other than DVrouter.py and LSrouter.py
-  - 10: doesn't use restricted functions and variables in provided files (see [Restrictions](#Restrictions))
+  - 10: doesn't modify files other than `DVrouter.py` and `LSrouter.py`
+  - 10: doesn't use restricted functions and variables in provided files (see [Restrictions](#restrictions))
   - 10: algorithmic correctness
 - 20: passing two small_net tests (10 for each)
 - 30: passing two pg244_net tests (15 for each)
 - 20: passing two pg242_net tests (10 for each)
-- 20: bonus points for implementing both (and passing all tests).
+- 20: bonus points for implementing both (and passing all tests)
 - Deductions based on late policies
 - For this project, you are not required to modify the report (but please feel free to include citations and grading notes there).
 

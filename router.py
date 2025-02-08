@@ -9,63 +9,63 @@ class Router:
     algorithm functionalities:
 
     - __init__
-    - handlePacket
-    - handleNewLink
-    - handleRemoveLink
-    - handleTime
-    - debugString (optional)
+    - handle_packet
+    - handle_new_link
+    - handle_remove_link
+    - handle_time
+    - __repr__ (optional, for your own debugging)
 
     Parameters
     ----------
     addr
         The address of this router.
-    heartbeatTime
-        Routing information should be sent at least once every heartbeatTime ms.
+    heartbeat_time
+        Routing information should be sent at least once every heartbeat_time ms.
     """
 
-    def __init__(self, addr, heartbeatTime=None):
+    def __init__(self, addr, heartbeat_time=None):
         self.addr = addr
         self.links = {}  # Links indexed by port
-        self.linkChanges = queue.Queue()  # Thread-safe queue for link changes
-        self.keepRunning = True
+        self.link_changes = queue.Queue()  # Thread-safe queue for link changes
+        self.keep_running = True
 
-    def changeLink(self, change):
-        """Add, remove, or change the ccost of a link.
+    def change_link(self, change):
+        """Add, remove, or change the cost of a link.
 
         The `change` argument is a tuple with first element being "add" or "remove".
         """
-        self.linkChanges.put(change)
+        self.link_changes.put(change)
 
-    def addLink(self, port, endpointAddr, link, cost):
+    def add_link(self, port, endpointAddr, link, cost):
         """Add new link to router."""
         if port in self.links:
-            self.removeLink(port)
+            self.remove_link(port)
         self.links[port] = link
-        self.handleNewLink(port, endpointAddr, cost)
+        self.handle_new_link(port, endpointAddr, cost)
 
-    def removeLink(self, port):
+    def remove_link(self, port):
         """Remove link from router."""
         self.links = {p: link for p, link in self.links.items() if p != port}
-        self.handleRemoveLink(port)
+        self.handle_remove_link(port)
 
-    def runRouter(self):
+    def run(self):
         """Main loop of router."""
-        while self.keepRunning:
+        while self.keep_running:
             time.sleep(0.1)
-            timeMillisecs = int(round(time.time() * 1000))
+            time_ms = int(round(time.time() * 1000))
             try:
-                change = self.linkChanges.get_nowait()
+                change = self.link_changes.get_nowait()
                 if change[0] == "add":
-                    self.addLink(*change[1:])
+                    self.add_link(*change[1:])
                 elif change[0] == "remove":
-                    self.removeLink(*change[1:])
+                    self.remove_link(*change[1:])
             except queue.Empty:
                 pass
             for port in self.links.keys():
                 packet = self.links[port].recv(self.addr)
                 if packet:
-                    self.handlePacket(port, packet)
-            self.handleTime(timeMillisecs)
+                    self.handle_packet(port, packet)
+            self.handle_time(time_ms)
 
     def send(self, port, packet):
         """Send a packet out given port."""
@@ -74,7 +74,7 @@ class Router:
         except KeyError:
             pass
 
-    def handlePacket(self, port, packet):
+    def handle_packet(self, port, packet):
         """Process incoming packet.
 
         Subclasses should override this method. The default implementation simply sends
@@ -93,7 +93,7 @@ class Router:
         """
         self.send(port, packet)
 
-    def handleNewLink(self, port, endpoint, cost):
+    def handle_new_link(self, port, endpoint, cost):
         """Handle new link.
 
         Subclasses should override this method. The default implementation is empty.
@@ -114,7 +114,7 @@ class Router:
         """
         pass
 
-    def handleRemoveLink(self, port):
+    def handle_remove_link(self, port):
         """Handle removed link.
 
         Subclasses should override this method. The default implementation is empty.
@@ -129,7 +129,7 @@ class Router:
         """
         pass
 
-    def handleTime(self, timeMillisecs):
+    def handle_time(self, time_ms):
         """Handle current time.
 
         Subclasses should override this method. The default implementation is empty.
@@ -139,13 +139,14 @@ class Router:
         """
         pass
 
-    def debugString(self):
-        """Generate a string for debugging in network visualizer.
+    def __repr__(self):
+        """Representation for debugging in the network visualizer.
 
         Subclasses may override this method.
 
-        This method is called by the network visualization to print current router
-        details. Return any string that will be helpful for debugging. This method is
-        for your own convenience and will not be graded.
+        The network visualizer will call `repr` to print current router details, whose
+        behavior can be controlled by this magic method. Return any string that will be
+        helpful for debugging. NOTE: This method is for your own convenience and will
+        not be graded.
         """
-        return f"Mirror router: address {self.addr}"
+        return f"Router(addr={self.addr})"

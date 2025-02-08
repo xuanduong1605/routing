@@ -22,23 +22,23 @@ class Link:
         self.q21 = queue.Queue()
         self.l12 = l12 * latency
         self.l21 = l21 * latency
-        self.latencyMultiplier = latency
+        self.latency_multiplier = latency
         self.e1 = e1
         self.e2 = e2
 
-    def send_helper(self, packet, src):
+    def _send_helper(self, packet, src):
         """
         Run in a separate thread and send packet on link from `src` after waiting for
         the appropriate latency.
         """
         if src == self.e1:
-            packet.addToRoute(self.e2)
-            packet.animateSend(self.e1, self.e2, self.l12)
+            packet.add_to_route(self.e2)
+            packet.animate_send(self.e1, self.e2, self.l12)
             time.sleep(self.l12 / float(1000))
             self.q12.put(packet)
         elif src == self.e2:
-            packet.addToRoute(self.e1)
-            packet.animateSend(self.e2, self.e1, self.l21)
+            packet.add_to_route(self.e1)
+            packet.animate_send(self.e2, self.e1, self.l21)
             time.sleep(self.l21 / float(1000))
             self.q21.put(packet)
         sys.stdout.flush()
@@ -51,13 +51,13 @@ class Link:
         if packet.content:
             assert isinstance(packet.content, str), "Packet content must be a string"
         p = packet.copy()
-        _thread.start_new_thread(self.send_helper, (p, src))
+        _thread.start_new_thread(self._send_helper, (p, src))
 
     def recv(self, dst, timeout=None):
         """
         Check whether a packet is ready to be received by `dst` on this link. `dst` must
         be equal to `self.e1` or `self.e2`. If the packet is ready, return the packet,
-        otherwise return None.
+        otherwise return `None`.
         """
         if dst == self.e1:
             try:
@@ -72,11 +72,11 @@ class Link:
             except queue.Empty:
                 return None
 
-    def changeLatency(self, src, c):
+    def change_latency(self, src, c):
         """
         Update the latency of sending on the link from `src`.
         """
         if src == self.e1:
-            self.l12 = c * self.latencyMultiplier
+            self.l12 = c * self.latency_multiplier
         elif src == self.e2:
-            self.l21 = c * self.latencyMultiplier
+            self.l21 = c * self.latency_multiplier

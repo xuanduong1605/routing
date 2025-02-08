@@ -1,3 +1,4 @@
+import argparse
 import sys
 import threading
 import json
@@ -9,12 +10,6 @@ from collections import defaultdict
 from client import Client
 from link import Link
 from router import Router
-from DVrouter import DVrouter
-from LSrouter import LSrouter
-
-# DVRouter and LSRouter imports placed in main and conditioned by DV|LS
-# argument so a syntax error in one of the files will not prevent the other
-# from being tested
 
 
 def json_load_byteified(file_handle):
@@ -44,78 +39,82 @@ class Network:
 
     Parameters
     ----------
-    netJsonFilepath
+    net_json_path
         The path to the JSON file that contains the network configurations.
-    routerClass
+    RouterClass
         Whether to use DVrouter, LSrouter, or the default router.
     visualize
         Whether to visualize the network.
     """
 
-    def __init__(self, netJsonFilepath, routerClass, visualize=False):
+    def __init__(self, net_json_path, RouterClass, visualize=False):
         # Parse configuration details
-        with open(netJsonFilepath, "r") as f:
-            netJson = json.load(f)
-        self.latencyMultiplier = 100
-        self.endTime = netJson["endTime"] * self.latencyMultiplier
+        with open(net_json_path, "r") as f:
+            net_json = json.load(f)
+        self.latency_multiplier = 100
+        self.end_time = net_json["end_time"] * self.latency_multiplier
         self.visualize = visualize
         if visualize:
-            self.latencyMultiplier *= netJson["visualize"]["timeMultiplier"]
-        self.clientSendRate = netJson["clientSendRate"] * self.latencyMultiplier
+            self.latency_multiplier *= net_json["visualize"]["time_multiplier"]
+        self.client_send_rate = net_json["client_send_rate"] * self.latency_multiplier
 
         # Parse and create routers, clients, and links
-        self.routers = self.parseRouters(netJson["routers"], routerClass)
-        self.clients = self.parseClients(netJson["clients"], self.clientSendRate)
-        self.links = self.parseLinks(netJson["links"])
+        self.routers = self.parse_routers(net_json["routers"], RouterClass)
+        self.clients = self.parse_clients(net_json["clients"], self.client_send_rate)
+        self.links = self.parse_links(net_json["links"])
 
         # Parse link changes
-        if "changes" in netJson:
-            self.changes = self.parseChanges(netJson["changes"])
+        if "changes" in net_json:
+            self.changes = self.parse_changes(net_json["changes"])
         else:
             self.changes = None
 
         # Parse correct routes and create some tracking fields
-        self.correctRoutes = self.parseCorrectRoutes(netJson["correctRoutes"])
+        self.correct_routes = self.parse_correct_routes(net_json["correct_routes"])
         self.threads = []
         self.routes = {}
-        self.routesLock = threading.Lock()
+        self.routes_lock = threading.Lock()
 
-    def parseRouters(self, routerParams, routerClass):
-        """Parse routes from the `routerParams` dict."""
+    def parse_routers(self, router_params, RouterClass):
+        """Parse routes from the `router_params` dict."""
         routers = {}
-        for addr in routerParams:
-            routers[addr] = routerClass(addr, heartbeatTime=self.latencyMultiplier * 10)
+        for addr in router_params:
+            routers[addr] = RouterClass(
+                addr, heartbeat_time=self.latency_multiplier * 10
+            )
         return routers
 
-    def parseClients(self, clientParams, clientSendRate):
-        """Parse clients from `clientParams` dict."""
+    def parse_clients(self, client_params, client_send_rate):
+        """Parse clients from `client_params` dict."""
         clients = {}
-        for addr in clientParams:
-            clients[addr] = Client(addr, clientParams, clientSendRate, self.updateRoute)
+        for addr in client_params:
+            clients[addr] = Client(
+                addr, client_params, client_send_rate, self.update_route
+            )
         return clients
 
-    def parseLinks(self, linkParams):
-        """Parse links from the `linkParams` dict."""
+    def parse_links(self, link_params):
+        """Parse links from the `link_params` dict."""
         links = {}
-        for addr1, addr2, p1, p2, c12, c21 in linkParams:
-            link = Link(addr1, addr2, c12, c21, self.latencyMultiplier)
+        for addr1, addr2, p1, p2, c12, c21 in link_params:
+            link = Link(addr1, addr2, c12, c21, self.latency_multiplier)
             links[(addr1, addr2)] = (p1, p2, c12, c21, link)
         return links
 
-    def parseChanges(self, changesParams):
-        """Parse link changes from the `changesParams` dict."""
+    def parse_changes(self, changes_params):
+        """Parse link changes from the `changes_params` dict."""
         changes = queue.PriorityQueue()
-        for change in changesParams:
+        for change in changes_params:
             changes.put(change)
         return changes
 
-    def parseCorrectRoutes(self, routesParams):
-        """Parse correct routes from the `routesParams` dict/"""
-        correctRoutes = defaultdict(list)
-        for route in routesParams:
+    def parse_correct_routes(self, routes_params):
+        """Parse correct routes from the `routes_params` dict/"""
+        correct_routes = defaultdict(list)
+        for route in routes_params:
             src, dst = route[0], route[-1]
-            correctRoutes[(src, dst)].append(route)
-        return correctRoutes
+            correct_routes[(src, dst)].append(route)
+        return correct_routes
 
     def run(self):
         """Run the network.
@@ -131,154 +130,165 @@ class Network:
             thread = ClientThread(client)
             thread.start()
             self.threads.append(thread)
-        self.addLinks()
+        self.add_links()
         if self.changes:
-            self.handleChangesThread = HandleChangesThread(self)
-            self.handleChangesThread.start()
+            self.handle_changes_thread = HandleChangesThread(self)
+            self.handle_changes_thread.start()
 
         if not self.visualize:
-            signal.signal(signal.SIGINT, self.handleInterrupt)
-            time.sleep(self.endTime / float(1000))
-            self.finalRoutes()
-            sys.stdout.write("\n" + self.getRouteString() + "\n")
-            self.joinAll()
+            signal.signal(signal.SIGINT, self.handle_interrupt)
+            time.sleep(self.end_time / float(1000))
+            self.final_routes()
+            sys.stdout.write("\n" + self.get_route_string() + "\n")
+            self.join_all()
 
-    def addLinks(self):
+    def add_links(self):
         """Add links to clients and routers."""
         for addr1, addr2 in self.links:
             p1, p2, c12, c21, link = self.links[(addr1, addr2)]
             if addr1 in self.clients:
-                self.clients[addr1].changeLink(("add", link))
+                self.clients[addr1].change_link(("add", link))
             if addr2 in self.clients:
-                self.clients[addr2].changeLink(("add", link))
+                self.clients[addr2].change_link(("add", link))
             if addr1 in self.routers:
-                self.routers[addr1].changeLink(("add", p1, addr2, link, c12))
+                self.routers[addr1].change_link(("add", p1, addr2, link, c12))
             if addr2 in self.routers:
-                self.routers[addr2].changeLink(("add", p2, addr1, link, c21))
+                self.routers[addr2].change_link(("add", p2, addr1, link, c21))
 
-    def handleChanges(self):
+    def handle_changes(self):
         """Handle changes to links.
 
         Run this method in a separate thread. Use a priority queue to track the time of
         next change.
         """
-        startTime = time.time() * 1000
+        start_time = time.time() * 1000
         while not self.changes.empty():
-            changeTime, target, change = self.changes.get()
-            currentTime = time.time() * 1000
-            waitTime = (changeTime * self.latencyMultiplier + startTime) - currentTime
-            if waitTime > 0:
-                time.sleep(waitTime / float(1000))
+            change_time, target, change = self.changes.get()
+            current_time = time.time() * 1000
+            wait_time = (
+                change_time * self.latency_multiplier + start_time
+            ) - current_time
+            if wait_time > 0:
+                time.sleep(wait_time / float(1000))
 
             # Link changes
             if change == "up":
                 addr1, addr2, p1, p2, c12, c21 = target
-                link = Link(addr1, addr2, c12, c21, self.latencyMultiplier)
+                link = Link(addr1, addr2, c12, c21, self.latency_multiplier)
                 self.links[(addr1, addr2)] = (p1, p2, c12, c21, link)
-                self.routers[addr1].changeLink(("add", p1, addr2, link, c12))
-                self.routers[addr2].changeLink(("add", p2, addr1, link, c21))
+                self.routers[addr1].change_link(("add", p1, addr2, link, c12))
+                self.routers[addr2].change_link(("add", p2, addr1, link, c21))
             elif change == "down":
                 addr1, addr2 = target
                 p1, p2, _, _, link = self.links[(addr1, addr2)]
-                self.routers[addr1].changeLink(("remove", p1))
-                self.routers[addr2].changeLink(("remove", p2))
+                self.routers[addr1].change_link(("remove", p1))
+                self.routers[addr2].change_link(("remove", p2))
 
             # Update visualization
-            if hasattr(Network, "visualizeChangesCallback"):
-                Network.visualizeChangesCallback(change, target)
+            if hasattr(Network, "visualize_changes_callback"):
+                Network.visualize_changes_callback(change, target)
 
-    def updateRoute(self, src, dst, route):
+    def update_route(self, src, dst, route):
         """
         Callback function used by clients to update the current routes taken by
         traceroute packets.
         """
-        self.routesLock.acquire()
-        timeMillisecs = int(round(time.time() * 1000))
-        isGood = route in self.correctRoutes[(src, dst)]
+        self.routes_lock.acquire()
+        time_ms = int(round(time.time() * 1000))
+        is_good = route in self.correct_routes[(src, dst)]
         try:
-            _, _, currentTime = self.routes[(src, dst)]
-            if timeMillisecs > currentTime:
-                self.routes[(src, dst)] = (route, isGood, timeMillisecs)
+            _, _, current_time = self.routes[(src, dst)]
+            if time_ms > current_time:
+                self.routes[(src, dst)] = (route, is_good, time_ms)
         except KeyError:
-            self.routes[(src, dst)] = (route, isGood, timeMillisecs)
+            self.routes[(src, dst)] = (route, is_good, time_ms)
         finally:
-            self.routesLock.release()
+            self.routes_lock.release()
 
-    def getRouteString(self, labelIncorrect=True):
+    def get_route_string(self, label_incorrect=True):
         """
         Create a string with all the current routes found by traceroute packets and
         whether they are correct.
         """
-        self.routesLock.acquire()
-        routeStrings = []
-        allCorrect = True
+        self.routes_lock.acquire()
+        route_strings = []
+        all_correcct = True
         for src, dst in self.routes:
-            route, isGood, _ = self.routes[(src, dst)]
-            info = "" if (isGood or not labelIncorrect) else "Incorrect Route"
-            routeStrings.append(f"{src} -> {dst}: {route} {info}")
-            if not isGood:
-                allCorrect = False
-        routeStrings.sort()
-        if allCorrect and len(self.routes) > 0:
-            routeStrings.append("\nSUCCESS: All Routes correct!")
+            route, is_good, _ = self.routes[(src, dst)]
+            info = "" if (is_good or not label_incorrect) else "Incorrect Route"
+            route_strings.append(f"{src} -> {dst}: {route} {info}")
+            if not is_good:
+                all_correcct = False
+        route_strings.sort()
+        if all_correcct and len(self.routes) > 0:
+            route_strings.append("\nSUCCESS: All Routes correct!")
         else:
-            routeStrings.append("\nFAILURE: Not all routes are correct")
-        routeString = "\n".join(routeStrings)
-        self.routesLock.release()
-        return routeString
+            route_strings.append("\nFAILURE: Not all routes are correct")
+        route_string = "\n".join(route_strings)
+        self.routes_lock.release()
+        return route_string
 
-    def getRoutePickle(self):
+    def get_route_pickle(self):
         """Create a pickle with the current routes found by traceroute packets."""
-        self.routesLock.acquire()
-        routePickle = pickle.dumps(self.routes)
-        self.routesLock.release()
-        return routePickle
+        self.routes_lock.acquire()
+        route_pickle = pickle.dumps(self.routes)
+        self.routes_lock.release()
+        return route_pickle
 
-    def resetRoutes(self):
+    def reset_routes(self):
         """Reset the routes found by traceroute packets."""
-        self.routesLock.acquire()
+        self.routes_lock.acquire()
         self.routes = {}
-        self.routesLock.release()
+        self.routes_lock.release()
 
-    def finalRoutes(self):
+    def final_routes(self):
         """Have the clients send one final batch of traceroute packets."""
-        self.resetRoutes()
+        self.reset_routes()
         for client in self.clients.values():
-            client.lastSend()
-        time.sleep(4 * self.clientSendRate / float(1000))
+            client.last_send()
+        time.sleep(4 * self.client_send_rate / float(1000))
 
-    def joinAll(self):
+    def join_all(self):
         if self.changes:
-            self.handleChangesThread.join()
+            self.handle_changes_thread.join()
         for thread in self.threads:
             thread.join()
 
-    def handleInterrupt(self, signum, _):
-        self.joinAll()
+    def handle_interrupt(self, signum, frame):
+        self.join_all()
         print("")
         quit()
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(
-            "Usage: python network.py "
-            "[networkSimulationFile.json] "
-            "[DV|LS (router class, optional)]"
-        )
-        return
+    parser = argparse.ArgumentParser(description="Run a network simulation.")
+    parser.add_argument(
+        "net_json_path",
+        type=str,
+        help="Path to the network simulation configuration file (JSON).",
+    )
+    parser.add_argument(
+        "router",
+        type=str,
+        choices=["DV", "LS"],
+        nargs="?",
+        default=None,
+        help="DV for DVrouter and LS for LSrouter. If not provided, Router is used.",
+    )
+    args = parser.parse_args()
 
-    netCfgFilepath = sys.argv[1]
     RouterClass = Router
-    if len(sys.argv) >= 3:
-        if sys.argv[2] == "DV":
-            RouterClass = DVrouter
-        elif sys.argv[2] == "LS":
-            RouterClass = LSrouter
+    if args.router == "DV":
+        from DVrouter import DVrouter
 
-    net = Network(netCfgFilepath, RouterClass, visualize=False)
+        RouterClass = DVrouter
+    elif args.router == "LS":
+        from LSrouter import LSrouter
+
+        RouterClass = LSrouter
+
+    net = Network(args.net_json_path, RouterClass, visualize=False)
     net.run()
-    return
 
 
 class RouterThread(threading.Thread):
@@ -287,11 +297,11 @@ class RouterThread(threading.Thread):
         self.router = router
 
     def run(self):
-        self.router.runRouter()
+        self.router.run()
 
     def join(self, timeout=None):
         # Terrible style (think about changing) but works like a charm
-        self.router.keepRunning = False
+        self.router.keep_running = False
         super(RouterThread, self).join(timeout)
 
 
@@ -302,11 +312,11 @@ class ClientThread(threading.Thread):
         self.client = client
 
     def run(self):
-        self.client.runClient()
+        self.client.run()
 
     def join(self, timeout=None):
         # Terrible style (think about changing) but works like a charm
-        self.client.keepRunning = False
+        self.client.keep_running = False
         super(ClientThread, self).join(timeout)
 
 
@@ -317,7 +327,7 @@ class HandleChangesThread(threading.Thread):
         self.network = network
 
     def run(self):
-        self.network.handleChanges()
+        self.network.handle_changes()
 
 
 if __name__ == "__main__":

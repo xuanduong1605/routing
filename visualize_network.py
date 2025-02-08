@@ -1,4 +1,4 @@
-import sys
+import argparse
 from tkinter import *
 import tkinter.font
 import json
@@ -7,97 +7,95 @@ import time
 from router import Router
 from network import Network
 from packet import Packet
-from DVrouter import DVrouter
-from LSrouter import LSrouter
 
 
 class App:
     """Tkinter GUI application for network simulation visualizations."""
 
-    def __init__(self, root, network, networkParams):
+    def __init__(self, root, network, network_params):
         self.network = network
-        self.networkParams = networkParams
-        Packet.animate = self.packetSend
-        Network.visualizeChangesCallback = self.visualizeChanges
-        self.animateRate = networkParams["visualize"]["animateRate"]
-        self.latencyCorrection = networkParams["visualize"]["latencyCorrection"]
-        self.clientFollowing = None
-        self.routerFollowing = None
-        self.displayCurrentRoutesRate = 100
-        self.displayCurrentDebugRate = 50
+        self.network_params = network_params
+        Packet.animate = self.packet_send
+        Network.visualize_changes_callback = self.visualize_changes
+        self.animate_rate = network_params["visualize"]["animate_rate"]
+        self.latency_correction = network_params["visualize"]["latency_correction"]
+        self.client_following = None
+        self.router_following = None
+        self.display_current_routes_rate = 100
+        self.display_current_debug_rate = 50
 
         # Enclosing frame
         self.frame = Frame(root)
         self.frame.grid(padx=10, pady=10)
 
         # Canvas for drawing the network
-        self.canvasWidth = networkParams["visualize"]["canvasWidth"]
-        self.canvasHeight = networkParams["visualize"]["canvasHeight"]
+        self.canvas_width = network_params["visualize"]["canvas_width"]
+        self.canvas_height = network_params["visualize"]["canvas_height"]
         self.canvas = Canvas(
-            self.frame, width=self.canvasWidth, height=self.canvasHeight
+            self.frame, width=self.canvas_width, height=self.canvas_height
         )
         self.canvas.grid(column=1, row=1, rowspan=4)
 
         # Text for displaying current routes
-        self.routeLabel = Label(self.frame, text="Current routes:")
-        self.routeLabel.grid(column=3, row=1)
-        self.routeScrollbar = Scrollbar(self.frame)
-        self.routeScrollbar.grid(column=2, row=2, sticky=NE + SE)
-        self.routeText = Text(self.frame, yscrollcommand=self.routeScrollbar.set)
-        self.routeText.grid(column=3, row=2)
+        self.route_label = Label(self.frame, text="Current routes:")
+        self.route_label.grid(column=3, row=1)
+        self.route_scrollbar = Scrollbar(self.frame)
+        self.route_scrollbar.grid(column=2, row=2, sticky=NE + SE)
+        self.route_text = Text(self.frame, yscrollcommand=self.route_scrollbar.set)
+        self.route_text.grid(column=3, row=2)
 
         # Text for displaying debugging information
-        self.debugLabel = Label(
+        self.debug_label = Label(
             self.frame, text="Click on routers to print debug string below:"
         )
-        self.debugLabel.grid(column=3, row=3)
-        self.debugScrollbar = Scrollbar(self.frame)
-        self.debugScrollbar.grid(column=2, row=4, sticky=NE + SE)
-        self.debugText = Text(self.frame, yscrollcommand=self.debugScrollbar.set)
-        self.debugText.grid(column=3, row=4)
+        self.debug_label.grid(column=3, row=3)
+        self.debug_scrollbar = Scrollbar(self.frame)
+        self.debug_scrollbar.grid(column=2, row=4, sticky=NE + SE)
+        self.debug_text = Text(self.frame, yscrollcommand=self.debug_scrollbar.set)
+        self.debug_text.grid(column=3, row=4)
 
-        self.rectCenters = self.calcRectCenters()
-        self.lines, self.lineLabels = self.drawLines()
-        self.rects = self.drawRectangles()
+        self.rect_centers = self.calc_rect_centers()
+        self.lines, self.line_labels = self.draw_lines()
+        self.rects = self.draw_rectangles()
 
         _thread.start_new_thread(self.network.run, ())
-        _thread.start_new_thread(self.displayCurrentRoutes, ())
-        _thread.start_new_thread(self.displayCurrentDebug, ())
+        _thread.start_new_thread(self.display_current_routes, ())
+        _thread.start_new_thread(self.display_current_debug, ())
 
-    def calcRectCenters(self):
+    def calc_rect_centers(self):
         """Compute the centers of the rectangles representing clients/routers."""
-        rectCenters = {}
-        gridSize = int(self.networkParams["visualize"]["gridSize"])
-        self.boxWidth = self.canvasWidth / gridSize
-        self.boxHeight = self.canvasHeight / gridSize
-        for label in self.networkParams["visualize"]["locations"]:
-            gx, gy = self.networkParams["visualize"]["locations"][label]
-            rectCenters[label] = (
-                gx * self.boxWidth + self.boxWidth / 2,
-                gy * self.boxHeight + self.boxHeight / 2,
+        rect_centers = {}
+        grid_size = int(self.network_params["visualize"]["grid_size"])
+        self.box_width = self.canvas_width / grid_size
+        self.box_height = self.canvas_height / grid_size
+        for label in self.network_params["visualize"]["locations"]:
+            gx, gy = self.network_params["visualize"]["locations"][label]
+            rect_centers[label] = (
+                gx * self.box_width + self.box_width / 2,
+                gy * self.box_height + self.box_height / 2,
             )
-        return rectCenters
+        return rect_centers
 
-    def drawLines(self):
+    def draw_lines(self):
         """Draw lines corresponding to links."""
         lines = {}
-        lineLabels = {}
-        for addr1, addr2, _, _, c12, c21 in self.networkParams["links"]:
-            line, lineLabel = self.drawLine(addr1, addr2, c12, c21)
+        line_labels = {}
+        for addr1, addr2, _, _, c12, c21 in self.network_params["links"]:
+            line, line_label = self.draw_line(addr1, addr2, c12, c21)
             lines[(addr1, addr2)] = line
-            lineLabels[(addr1, addr2)] = lineLabel
-        return lines, lineLabels
+            line_labels[(addr1, addr2)] = line_label
+        return lines, line_labels
 
-    def drawLine(self, addr1, addr2, c12, c21):
+    def draw_line(self, addr1, addr2, c12, c21):
         """Draw a single line corresponding to one link."""
-        center1, center2 = self.rectCenters[addr1], self.rectCenters[addr2]
+        center1, center2 = self.rect_centers[addr1], self.rect_centers[addr2]
         line = self.canvas.create_line(
             center1[0],
             center1[1],
             center2[0],
             center2[1],
-            width=self.networkParams["visualize"]["lineWidth"],
-            fill=self.networkParams["visualize"]["lineColor"],
+            width=self.network_params["visualize"]["line_width"],
+            fill=self.network_params["visualize"]["line_color"],
         )
         self.canvas.tag_lower(line)
         tx, ty = (center1[0] + center2[0]) / 2, (center1[1] + center2[1]) / 2
@@ -113,25 +111,25 @@ class App:
             text=t,
             state=NORMAL,
             font=tkinter.font.Font(
-                size=self.networkParams["visualize"]["lineFontSize"]
+                size=self.network_params["visualize"]["line_font_size"]
             ),
         )
         return line, label
 
-    def drawRectangles(self):
+    def draw_rectangles(self):
         """Draw rectangles corresponding to clients/routers."""
         rects = {}
-        for label in self.rectCenters:
+        for label in self.rect_centers:
             if label in self.network.clients:
-                fill = self.networkParams["visualize"]["clientColor"]
+                fill = self.network_params["visualize"]["client_color"]
             elif label in self.network.routers:
-                fill = self.networkParams["visualize"]["routerColor"]
-            c = self.rectCenters[label]
+                fill = self.network_params["visualize"]["router_color"]
+            c = self.rect_centers[label]
             rect = self.canvas.create_rectangle(
-                c[0] - self.boxWidth / 6,
-                c[1] - self.boxHeight / 6,
-                c[0] + self.boxWidth / 6,
-                c[1] + self.boxHeight / 6,
+                c[0] - self.box_width / 6,
+                c[1] - self.box_height / 6,
+                c[0] + self.box_width / 6,
+                c[1] + self.box_height / 6,
                 fill=fill,
                 activeoutline="green",
                 activewidth=5,
@@ -139,7 +137,7 @@ class App:
             self.canvas.tag_bind(
                 rect,
                 "<1>",
-                lambda event, label=label: self.inspectClientOrRouter(label),
+                lambda event, label=label: self.inspect_client_or_router(label),
             )
             rects[label] = rect
             self.canvas.create_text(
@@ -147,117 +145,130 @@ class App:
             )
         return rects
 
-    def inspectClientOrRouter(self, addr):
+    def inspect_client_or_router(self, addr):
         """Handle a mouse click on a client or router."""
         if addr in self.network.clients:
-            if self.clientFollowing:
-                self.canvas.itemconfig(self.rects[self.clientFollowing], width=1)
-            if self.clientFollowing != addr:
-                self.clientFollowing = addr
+            if self.client_following:
+                self.canvas.itemconfig(self.rects[self.client_following], width=1)
+            if self.client_following != addr:
+                self.client_following = addr
                 self.canvas.itemconfig(self.rects[addr], width=7)
             else:
-                self.clientFollowing = None
+                self.client_following = None
         elif addr in self.network.routers:
-            if self.routerFollowing:
+            if self.router_following:
                 self.canvas.itemconfig(
-                    self.rects[self.routerFollowing], outline="black", width=1
+                    self.rects[self.router_following], outline="black", width=1
                 )
-            if self.routerFollowing != addr:
-                self.routerFollowing = addr
+            if self.router_following != addr:
+                self.router_following = addr
                 self.canvas.itemconfig(self.rects[addr], width=7)
             else:
-                self.routerFollowing = None
+                self.router_following = None
 
-    def packetSend(self, packet, src, dst, latency):
+    def packet_send(self, packet, src, dst, latency):
         """Callback function to tell the visualization that a packet is being sent."""
-        if self.clientFollowing:
-            if packet.dstAddr == self.clientFollowing and packet.isTraceroute():
-                fillColor = "green"
+        if self.client_following:
+            if packet.dst_addr == self.client_following and packet.is_traceroute:
+                fill_color = "green"
             else:
                 return
         else:
-            fillColor = "gray" if packet.isTraceroute() else "turquoise"
-        latency = latency / self.latencyCorrection
-        cx, cy = self.rectCenters[src]
-        dx, dy = self.rectCenters[dst]
-        packetRect = self.canvas.create_rectangle(
-            cx - 6, cy - 6, cx + 6, cy + 6, fill=fillColor
+            fill_color = "gray" if packet.is_traceroute else "turquoise"
+        latency = latency / self.latency_correction
+        cx, cy = self.rect_centers[src]
+        dx, dy = self.rect_centers[dst]
+        packet_rect = self.canvas.create_rectangle(
+            cx - 6, cy - 6, cx + 6, cy + 6, fill=fill_color
         )
         distx, disty = dx - cx, dy - cy
-        velocityx, velocityy = (distx * self.animateRate) / float(latency), (
-            disty * self.animateRate / float(latency)
+        velocityx, velocityy = (distx * self.animate_rate) / float(latency), (
+            disty * self.animate_rate / float(latency)
         )
-        numSteps, stepTime = latency / self.animateRate, self.animateRate / float(1000)
+        num_steps, step_time = latency / self.animate_rate, self.animate_rate / float(
+            1000
+        )
         _thread.start_new_thread(
-            self.movePacket, (packetRect, velocityx, velocityy, numSteps, stepTime)
+            self.movePacket, (packet_rect, velocityx, velocityy, num_steps, step_time)
         )
 
-    def movePacket(self, packetRect, vx, vy, numSteps, stepTime):
+    def movePacket(self, packet_rect, vx, vy, num_steps, step_time):
         """Animate a moving packet, running on a separate thread."""
-        s = numSteps
+        s = num_steps
         while s > 0:
-            time.sleep(stepTime)
-            self.canvas.move(packetRect, vx, vy)
+            time.sleep(step_time)
+            self.canvas.move(packet_rect, vx, vy)
             s -= 1
-        self.canvas.delete(packetRect)
+        self.canvas.delete(packet_rect)
 
-    def displayCurrentRoutes(self):
+    def display_current_routes(self):
         """Display the current routes found by traceroute packets."""
         while True:
-            routeString = self.network.getRouteString(labelIncorrect=False)
-            pos = self.routeScrollbar.get()
-            self.routeText.delete(1.0, END)
-            self.routeText.insert(1.0, routeString)
-            self.routeText.yview_moveto(pos[0])
-            time.sleep(self.displayCurrentRoutesRate / float(1000))
+            route_string = self.network.get_route_string(label_incorrect=False)
+            pos = self.route_scrollbar.get()
+            self.route_text.delete(1.0, END)
+            self.route_text.insert(1.0, route_string)
+            self.route_text.yview_moveto(pos[0])
+            time.sleep(self.display_current_routes_rate / float(1000))
 
-    def displayCurrentDebug(self):
+    def display_current_debug(self):
         """Display the debug string of the currently selected router."""
         while True:
-            if self.routerFollowing:
-                debugText = self.network.routers[self.routerFollowing].debugString()
-                pos = self.debugScrollbar.get()
-                self.debugText.delete(1.0, END)
-                self.debugText.insert(END, debugText + "\n")
-                self.debugText.yview_moveto(pos[0])
-            time.sleep(self.displayCurrentDebugRate / float(1000))
+            if self.router_following:
+                debug_text = repr(self.network.routers[self.router_following])
+                pos = self.debug_scrollbar.get()
+                self.debug_text.delete(1.0, END)
+                self.debug_text.insert(END, debug_text + "\n")
+                self.debug_text.yview_moveto(pos[0])
+            time.sleep(self.display_current_debug_rate / float(1000))
 
-    def visualizeChanges(self, change, target):
+    def visualize_changes(self, change, target):
         """Make color and text changes to links upon add/remove/cost changes."""
         if change == "up":
             addr1, addr2, _, _, c12, c21 = target
-            newLine, newLabel = self.drawLine(addr1, addr2, c12, c21)
-            self.lines[(addr1, addr2)] = newLine
-            self.linesLabel = newLabel
+            new_line, new_label = self.draw_line(addr1, addr2, c12, c21)
+            self.lines[(addr1, addr2)] = new_line
+            self.line_labels = new_label
         elif change == "down":
             addr1, addr2 = target
             self.canvas.delete(self.lines[(addr1, addr2)])
-            self.canvas.delete(self.lineLabels[(addr1, addr2)])
+            self.canvas.delete(self.line_labels[(addr1, addr2)])
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(
-            "Usage: python network.py "
-            "[networkSimulationFile.json] "
-            "[DV|LS (router class, optional)]"
-        )
-        return
+    parser = argparse.ArgumentParser(description="Visualize a network simulation.")
+    parser.add_argument(
+        "net_json_path",
+        type=str,
+        help="Path to the network simulation configuration file (JSON).",
+    )
+    parser.add_argument(
+        "router",
+        type=str,
+        choices=["DV", "LS"],
+        nargs="?",
+        default=None,
+        help="DV for DVrouter and LS for LSrouter. If not provided, Router is used.",
+    )
+    args = parser.parse_args()
 
-    netCfgFilepath = sys.argv[1]
-    with open(netCfgFilepath, "r") as f:
-        visualizeParams = json.load(f)
+    with open(args.net_json_path, "r") as f:
+        visualize_params = json.load(f)
+
     RouterClass = Router
-    if len(sys.argv) == 3:
-        if sys.argv[2] == "DV":
-            RouterClass = DVrouter
-        elif sys.argv[2] == "LS":
-            RouterClass = LSrouter
+    if args.router == "DV":
+        from DVrouter import DVrouter
 
-    net = Network(netCfgFilepath, RouterClass, visualize=True)
+        RouterClass = DVrouter
+    elif args.router == "LS":
+        from LSrouter import LSrouter
+
+        RouterClass = LSrouter
+
+    net = Network(args.net_json_path, RouterClass, visualize=True)
     root = Tk()
     root.wm_title("Network Visualization")
-    App(root, net, visualizeParams)
+    App(root, net, visualize_params)
     root.mainloop()
 
 

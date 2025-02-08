@@ -1,4 +1,4 @@
-from copy import deepcopy
+import copy
 
 
 class Packet:
@@ -11,9 +11,9 @@ class Packet:
     kind
         Either Packet.TRACEROUTE or Packet.ROUTING. Use Packet.ROUTING for all packets
         created by your implementations.
-    srcAddr
+    src_addr
         The address of the source of the packet.
-    dstAddr
+    dst_addr
         The address of the destination of the packet.
     content
         The content of the packet. Must be a string.
@@ -22,44 +22,38 @@ class Packet:
     TRACEROUTE = 1
     ROUTING = 2
 
-    def __init__(self, kind, srcAddr, dstAddr, content=None):
+    def __init__(self, kind, src_addr, dst_addr, content=None):
         self.kind = kind
-        self.srcAddr = srcAddr
-        self.dstAddr = dstAddr
+        self.src_addr = src_addr
+        self.dst_addr = dst_addr
         self.content = content
-        self.route = [srcAddr]
+        self.route = [src_addr]
 
     def copy(self):
         """Create a deep copy of the packet.
 
         This gets called automatically when the packet is sent to avoid aliasing issues.
         """
-        content = deepcopy(self.content)
-        p = Packet(self.kind, self.srcAddr, self.dstAddr, content=content)
+        content = copy.deepcopy(self.content)
+        p = Packet(self.kind, self.src_addr, self.dst_addr, content=content)
         p.route = list(self.route)
         return p
 
-    def isTraceroute(self):
+    @property
+    def is_traceroute(self):
         """Returns True if the packet is a traceroute packet."""
         return self.kind == Packet.TRACEROUTE
 
-    def isRouting(self):
+    @property
+    def is_routing(self):
         """Returns True is the packet is a routing packet."""
         return self.kind == Packet.ROUTING
 
-    def getContent(self):
-        """Returns the content of the packet."""
-        return self.content
-
-    def addToRoute(self, addr):
-        """DO NOT CALL from DVrouter or LSrouter."""
+    def add_to_route(self, addr):
+        """DO NOT CALL from DVrouter or LSrouter!"""
         self.route.append(addr)
 
-    def getRoute(self):
-        """DO NOT CALL from DVRouter or LSrouter."""
-        return self.route
-
-    def animateSend(self, src, dst, latency):
-        """DO NOT CALL from DVRouter or LSrouter."""
+    def animate_send(self, src, dst, latency):
+        """DO NOT CALL from DVrouter or LSrouter!"""
         if hasattr(Packet, "animate"):
             Packet.animate(self, src, dst, latency)
