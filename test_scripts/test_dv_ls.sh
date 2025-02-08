@@ -60,7 +60,7 @@ function testAll {
   else
     testMessage="Testing Link State routing implementation"
   fi
-  printf "================================================================\n" 
+  printf "================================================================\n"
   printf "$testMessage\n"
   printf "================================================================\n"
 

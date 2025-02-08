@@ -13,5 +13,6 @@
 
 **/p4src/*.json
 **/*_topo.json
+test_result
 
 .idea
