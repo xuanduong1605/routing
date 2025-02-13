@@ -34,12 +34,12 @@ class Link:
         if src == self.e1:
             packet.add_to_route(self.e2)
             packet.animate_send(self.e1, self.e2, self.l12)
-            time.sleep(self.l12 / float(1000))
+            time.sleep(self.l12 / 1000)
             self.q12.put(packet)
         elif src == self.e2:
             packet.add_to_route(self.e1)
             packet.animate_send(self.e2, self.e1, self.l21)
-            time.sleep(self.l21 / float(1000))
+            time.sleep(self.l21 / 1000)
             self.q21.put(packet)
         sys.stdout.flush()
 

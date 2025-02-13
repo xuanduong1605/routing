@@ -137,7 +137,7 @@ class Network:
 
         if not self.visualize:
             signal.signal(signal.SIGINT, self.handle_interrupt)
-            time.sleep(self.end_time / float(1000))
+            time.sleep(self.end_time / 1000)
             self.final_routes()
             sys.stdout.write("\n" + self.get_route_string() + "\n")
             self.join_all()
@@ -169,7 +169,7 @@ class Network:
                 change_time * self.latency_multiplier + start_time
             ) - current_time
             if wait_time > 0:
-                time.sleep(wait_time / float(1000))
+                time.sleep(wait_time / 1000)
 
             # Link changes
             if change == "up":
@@ -246,7 +246,7 @@ class Network:
         self.reset_routes()
         for client in self.clients.values():
             client.last_send()
-        time.sleep(4 * self.client_send_rate / float(1000))
+        time.sleep(4 * self.client_send_rate / 1000)
 
     def join_all(self):
         if self.changes:

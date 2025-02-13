@@ -2,7 +2,7 @@
   "routers": ["A", "B", "C", "D", "E", "F"],
   "clients": ["a", "b", "c", "d", "e", "f"],
   "client_send_rate": 10,
-  "end_time": 200,
+  "end_time": 400,
 
   "links": [
     ["A", "B", 1, 1, 3, 3],

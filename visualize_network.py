@@ -182,12 +182,10 @@ class App:
             cx - 6, cy - 6, cx + 6, cy + 6, fill=fill_color
         )
         distx, disty = dx - cx, dy - cy
-        velocityx, velocityy = (distx * self.animate_rate) / float(latency), (
-            disty * self.animate_rate / float(latency)
+        velocityx, velocityy = (distx * self.animate_rate) / latency, (
+            disty * self.animate_rate / latency
         )
-        num_steps, step_time = latency / self.animate_rate, self.animate_rate / float(
-            1000
-        )
+        num_steps, step_time = latency / self.animate_rate, self.animate_rate / 1000
         _thread.start_new_thread(
             self.movePacket, (packet_rect, velocityx, velocityy, num_steps, step_time)
         )
@@ -209,7 +207,7 @@ class App:
             self.route_text.delete(1.0, END)
             self.route_text.insert(1.0, route_string)
             self.route_text.yview_moveto(pos[0])
-            time.sleep(self.display_current_routes_rate / float(1000))
+            time.sleep(self.display_current_routes_rate / 1000)
 
     def display_current_debug(self):
         """Display the debug string of the currently selected router."""
@@ -220,15 +218,14 @@ class App:
                 self.debug_text.delete(1.0, END)
                 self.debug_text.insert(END, debug_text + "\n")
                 self.debug_text.yview_moveto(pos[0])
-            time.sleep(self.display_current_debug_rate / float(1000))
+            time.sleep(self.display_current_debug_rate / 1000)
 
     def visualize_changes(self, change, target):
         """Make color and text changes to links upon add/remove/cost changes."""
         if change == "up":
             addr1, addr2, _, _, c12, c21 = target
-            new_line, new_label = self.draw_line(addr1, addr2, c12, c21)
+            new_line, _ = self.draw_line(addr1, addr2, c12, c21)
             self.lines[(addr1, addr2)] = new_line
-            self.line_labels = new_label
         elif change == "down":
             addr1, addr2 = target
             self.canvas.delete(self.lines[(addr1, addr2)])
