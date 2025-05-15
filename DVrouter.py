@@ -7,7 +7,6 @@
 from router import Router
 import json
 from packet import Packet
-import heapq
 
 class DVrouter(Router):
     """Distance vector routing protocol implementation.
@@ -22,14 +21,21 @@ class DVrouter(Router):
         self.heartbeat_time = heartbeat_time
         self.last_time = 0
         # TODO
+        #   add your own class fields and initialization code here
         self.distance = {self.addr: 0}
-        self.forwarding_table = {}
-        self.neighbors = {}
+        self.forwarding_table = {} 
+        self.neighbors = {}      
 
     def broadcast_update(self):
         """Send current distance vector to all neighbors."""
-        content = json.dumps(self.distance)
         for port in list(self.links):
+            poisoned_distance = {}
+            for dest, cost in self.distance.items():
+                if dest in self.forwarding_table and self.forwarding_table[dest] == port:
+                    poisoned_distance[dest] = float("inf")
+                else:
+                    poisoned_distance[dest] = cost
+            content = json.dumps(poisoned_distance)
             packet = Packet(Packet.ROUTING, self.addr, None, content)
             self.send(port, packet)
 
@@ -54,14 +60,21 @@ class DVrouter(Router):
             neighbor_dv = json.loads(packet.content)
             updated = False
             for dest, cost_to_dest in neighbor_dv.items():
-                if dest == self.addr:
+                if dest == self.addr or not isinstance(cost_to_dest, (int, float)) or cost_to_dest < 0:
                     continue
                 new_cost = neighbor_cost + cost_to_dest
                 old_cost = self.distance.get(dest, float("inf"))
-                if new_cost < old_cost:
-                    self.distance[dest] = new_cost
-                    self.forwarding_table[dest] = port
-                    updated = True
+                current_port = self.forwarding_table.get(dest)
+                if cost_to_dest == float("inf"):
+                    if current_port == port and self.distance.get(dest, float("inf")) != float("inf"):
+                        self.distance[dest] = float("inf")
+                        del self.forwarding_table[dest]
+                        updated = True
+                else:
+                    if (new_cost < old_cost) or (new_cost == old_cost and current_port is not None and port < current_port):
+                        self.distance[dest] = new_cost
+                        self.forwarding_table[dest] = port
+                        updated = True
             if updated:
                 self.broadcast_update()
 
@@ -72,9 +85,13 @@ class DVrouter(Router):
         #   update the forwarding table
         #   broadcast the distance vector of this router to neighbors
         self.neighbors[port] = (endpoint, cost)
-        self.distance[endpoint] = cost
-        self.forwarding_table[endpoint] = port
-        self.broadcast_update()
+        changed = False
+        if endpoint not in self.distance or cost < self.distance[endpoint]:
+            self.distance[endpoint] = cost
+            self.forwarding_table[endpoint] = port
+            changed = True
+        if changed:
+            self.broadcast_update()
 
     def handle_remove_link(self, port):
         """Handle removed link."""
@@ -83,13 +100,15 @@ class DVrouter(Router):
         #   update the forwarding table
         #   broadcast the distance vector of this router to neighbors
         if port in self.neighbors:
-            _, _ = self.neighbors.pop(port)
-            # clear routes that used this port
-            for dest, p in list(self.forwarding_table.items()):
-                if p == port:
-                    del self.forwarding_table[dest]
-                    self.distance[dest] = float("inf")
-            self.broadcast_update()
+            endpoint, _ = self.neighbors.pop(port)
+            changed = False
+            to_remove = [dest for dest, p in self.forwarding_table.items() if p == port]
+            for dest in to_remove:
+                del self.forwarding_table[dest]
+                self.distance[dest] = float("inf")
+                changed = True
+            if changed:
+                self.broadcast_update()
 
     def handle_time(self, time_ms):
         """Handle current time."""
